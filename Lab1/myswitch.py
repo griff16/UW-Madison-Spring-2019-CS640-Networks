@@ -1,10 +1,3 @@
-'''
-Ethernet learning switch in Python.
-
-Note that this file currently has the code to implement a "hub"
-in it, not a learning switch.  (I.e., it's currently a switch
-that doesn't learn.)
-'''
 from switchyard.lib.userlib import *
 
 def main(net):
@@ -25,7 +18,7 @@ def main(net):
             log_debug ("Packet intended for me")
         else:
             if packet[0].src in cache:  # check src
-                if input_port != cache[packet[0].src]:  # when the port is the same
+                if input_port != cache[packet[0].src]:  # when the port is not the same
                     cache[packet[0].src] = input_port
             else:  # table does not contain entry for src address
                 if len(cache) == 5:
@@ -37,6 +30,7 @@ def main(net):
                     if input_port != intf.name:
                         net.send_packet(intf.name, packet)
             else:  # update the cache and send
-                cache[packet[0].dst] = cache.pop(cache[packet[0].dst])
+                temp = cache.pop(cache[packet[0].dst])
+                cache[packet[0].dst] = temp
                 net.send_packet(cache[packet[0].dst], packet)
     net.shutdown()
