@@ -17,6 +17,7 @@ def main(net):
         if packet[0].dst in mymacs:
             log_debug ("Packet intended for me")
         else:
+            log_info(packet[0].src, packet[0].dst)
             if packet[0].src in cache:  # check src
                 if input_port != cache[packet[0].src]:  # when the port is not the same
                     cache[packet[0].src] = input_port
@@ -30,7 +31,6 @@ def main(net):
                     if input_port != intf.name:
                         net.send_packet(intf.name, packet)
             else:  # update the cache and send
-                temp = cache.pop(cache[packet[0].dst])
-                cache[packet[0].dst] = temp
+                cache[packet[0].dst] = cache.pop(packet[0].dst)
                 net.send_packet(cache[packet[0].dst], packet)
     net.shutdown()
