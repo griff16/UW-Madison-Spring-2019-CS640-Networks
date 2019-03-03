@@ -16,20 +16,23 @@ class MySwitch_stp(root="00:00:00:00:00:00", hops_to_root = 0):
                 minMac = min
         return minMac
 
-    def main (net):
-        my_interfaces = net.interfaces()
-        mymacs = [intf.ethaddr for intf in my_interfaces]
+def main (net):
+    my_interfaces = net.interfaces()
+    mymacs = [intf.ethaddr for intf in my_interfaces]
 
-        # minMac(mymacs)
-        for min in mymacs:
-            if min < curRoot:
-                curRoot = min
+    # minMac(mymacs)
+    for min in mymacs:
+        if min < curRoot:
+            curRoot = min
 
-        # creating the header
-        spm = SpanningTreeMessage(curRoot)
-        Ethernet.add_next_header_class(EtherType.SLOW, SpanningTreeMessage)
-        pkt = Ethernet(src="11:22:11:22:11:22", dst="22:33:22:33:22:33", ethertype=EtherType.SLOW) + spm
+    # creating the header
+    spm = SpanningTreeMessage(curRoot)
+    Ethernet.add_next_header_class(EtherType.SLOW, SpanningTreeMessage)
+    pkt = Ethernet(src="11:22:11:22:11:22", dst="22:33:22:33:22:33", ethertype=EtherType.SLOW) + spm
 
-        # flood the STP
-        for intf in my_interfaces:  # flood the packet
-            net.send_packet(intf.name, packet)
+    # flood the STP
+    for intf in my_interfaces:  # flood the packet
+        net.send_packet(intf.name, packet)
+
+if __name__== "__main__":
+    main(net)
