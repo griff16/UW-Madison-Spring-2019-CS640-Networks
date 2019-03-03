@@ -26,7 +26,7 @@ def main(net):
                     cache.pop(list(cache)[0])
                 cache[packet[0].src] = input_port
 
-            if packet[0].dst not in cache:  # check destination
+            if packet[0].dst not in cache or packet[0].dst == "FF:FF:FF:FF:FF:FF":  # check destination
                 for intf in my_interfaces:  # flood the packet
                     if input_port != intf.name:
                         net.send_packet(intf.name, packet)

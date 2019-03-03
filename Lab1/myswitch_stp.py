@@ -1,39 +1,34 @@
 from switchyard.lib.userlib import *
-import struct
+from spanningtreemessage import *
 
-class Myswitch_stp(PacketHeaderBase):
-    _PACKFMT = "6sxB" 
+class MySwitch_stp(root="00:00:00:00:00:00", hops_to_root = 0):
+    curRoot = "FF:FF:FF:FF:FF:FF"
+    hopsToRoot = 0
 
-    def __init__(self, root="00:00:00:00:00:00", **kwargs):
-        self._root = EthAddr(root)
-        self._hops_to_root = 0
-        PacketHeaderBase.__init__(self, **kwargs)
+    def __init__(self, root, hops_to_root = 0):
+        self.curRoot = root
+        self.hopsToRoot = hops_to_root
 
-    def to_bytes(self):
-        raw = struct.pack(self._PACKFMT, self._root.raw, self._hops_to_root)
-        return raw
+    def minMac (self, mymacs):  # return the lowest mac addr in the switch
+        minMac = "FF:FF:FF:FF:FF:FF"
+        for min in mymacs:
+            if minMac < min:
+                minMac = min
+        return minMac
 
-    def from_bytes(self, raw):
-        packsize = struct.calcsize(self._PACKFMT)
-        if len(raw) < packsize:
-            raise ValueError("Not enough bytes to unpack SpanningTreeMessage")
-        xroot, xhops = struct.unpack(self._PACKFMT, raw[:packsize])
-        self._root = EthAddr(xroot)
-        self.hops_to_root = xhops
-        return raw[packsize:]
+    def main (net):
+        my_interfaces = net.interfaces()
+        mymacs = [intf.ethaddr for intf in my_interfaces]
 
-    @property
-    def hops_to_root(self):
-        return self._hops_to_root
+        # minMac(mymacs)
+        for min in mymacs:
+            if min < curRoot:
+                curRoot = min
 
-    @hops_to_root.setter
-    def hops_to_root(self, value):
-        self._hops_to_root = int(value)
+        # creating the header
+        # spm = SpanningTreeMessage(minMac)
+        # Ethernet.add_next_header_class(EtherType.SLOW, SpanningTreeMessage)
+        # pkt = Ethernet(src="11:22:11:22:11:22", dst="22:33:22:33:22:33", ethertype=EtherType.SLOW) + spm
 
-    @property
-    def root(self):
-        return self._root
-
-    def __str__(self):
-        return "{} (root: {}, hops-to-root: {})".format(
-            self.__class__.__name__, self.root, self.hops_to_root)
+        # flood the STP
+        
