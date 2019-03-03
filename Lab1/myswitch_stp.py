@@ -26,9 +26,10 @@ class MySwitch_stp(root="00:00:00:00:00:00", hops_to_root = 0):
                 curRoot = min
 
         # creating the header
-        # spm = SpanningTreeMessage(minMac)
-        # Ethernet.add_next_header_class(EtherType.SLOW, SpanningTreeMessage)
-        # pkt = Ethernet(src="11:22:11:22:11:22", dst="22:33:22:33:22:33", ethertype=EtherType.SLOW) + spm
+        spm = SpanningTreeMessage(curRoot)
+        Ethernet.add_next_header_class(EtherType.SLOW, SpanningTreeMessage)
+        pkt = Ethernet(src="11:22:11:22:11:22", dst="22:33:22:33:22:33", ethertype=EtherType.SLOW) + spm
 
         # flood the STP
-        
+        for intf in my_interfaces:  # flood the packet
+            net.send_packet(intf.name, packet)
