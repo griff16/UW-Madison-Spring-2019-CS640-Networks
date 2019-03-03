@@ -3,11 +3,11 @@
 Derived from : jsommers switchyard examples"""
 
 from switchyard.lib.userlib import *
-from myswitch_stp import MySwitch_stp
+from spanningtreemessage import *
 
 def mk_stp_pkt(root_id, hops, hwsrc="20:00:00:00:00:01", hwdst="ff:ff:ff:ff:ff:ff"):
-    spm = MySwitch_stp(root=root_id, hops_to_root=hops)
-    Ethernet.add_next_header_class(EtherType.SLOW, MySwitch_stp)
+    spm = SpanningTreeMessage(root=root_id, hops_to_root=hops)
+    Ethernet.add_next_header_class(EtherType.SLOW, SpanningTreeMessage)
     pkt = Ethernet(src=hwsrc,
                    dst=hwdst,
                    ethertype=EtherType.SLOW) + spm
