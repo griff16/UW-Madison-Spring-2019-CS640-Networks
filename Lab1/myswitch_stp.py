@@ -11,7 +11,7 @@ def mk_stp_pkt(root_id, hops, hwsrc="20:00:00:00:00:01", hwdst="ff:ff:ff:ff:ff:f
     p = Packet(raw=xbytes)
     return p
 
-def flood (input_port, my_interfaces, net, packet):
+def flood (input_port, my_interfaces, net, packet):  # handle mode situation
     for intf in my_interfaces:  # flood the packet
         if input_port != intf.name:
             net.send_packet(intf.name, packet)
@@ -65,6 +65,7 @@ def main (net):
                 elif packet[1].hops_to_root() + 1 > hops:
                     pass
                 else:
-                    if input_port in mode:
+                    if input_port in mode:  # this mode check fix me?
                         mode[input_port] = False
+        sleep(2)
     net.shutdown()
