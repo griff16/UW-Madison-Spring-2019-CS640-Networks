@@ -2,10 +2,10 @@ from switchyard.lib.userlib import *
 from spanningtreemessage import *
 from time import sleep
 
-class MySwitch_stp:
-    def __init__(self, root, hops_to_root):
-        self._root = root
-        self._hops_to_root = 0
+def flood (input_port, my_interfaces, net, packet):
+    for intf in my_interfaces:  # flood the packet
+        if input_port != intf.name:
+            net.send_packet(intf.name, packet)
 
 def minMac (mymacs):  # return the lowest mac addr in the switch
     minMac = "FF:FF:FF:FF:FF:FF"
@@ -17,16 +17,38 @@ def minMac (mymacs):  # return the lowest mac addr in the switch
 def main (net):
     my_interfaces = net.interfaces()
     mymacs = [intf.ethaddr for intf in my_interfaces]
-    min = minMac(mymacs)
+    mode = {}
+    id = minMac(mymacs)
+    hops = 0
 
     # creating the header
-    spm = SpanningTreeMessage(min)
+    spm = SpanningTreeMessage(id)
     spm.hops_to_root(0)
-    Ethernet.add_next_header_class(EtherType.SLOW, SpanningTreeMessage)
     pkt = Ethernet(src="11:22:11:22:11:22", dst="22:33:22:33:22:33", ethertype=EtherType.SLOW) + spm
 
     # flood the STP
     for intf in my_interfaces:  # flood the packet
         net.send_packet(intf.name, pkt)
-    timestamp,input_port,packet = net.recv_packet()
+    # do we need to add recive packet here?
     sleep(2)
+
+    while True:
+        try:
+            timestamp,input_port,packet = net.recv_packet()
+        except NoPackets:
+            continue
+        except Shutdown:
+            return
+
+        if packet.has_header(SpanningTreeMessage) == False:
+            flood(input_port, my_interfaces, net, packet)
+        else:
+            if packet[1].root() < id:
+                id = packet[1].root()
+                # update hops?
+                packet[1].hops_to_root(packet[1].hops_to_root())
+                mode[input_port] = True
+                flood(input_port, my_interfaces, net, packet)
+            else:
+                pass
+
