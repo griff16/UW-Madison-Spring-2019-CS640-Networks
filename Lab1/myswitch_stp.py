@@ -4,7 +4,6 @@ from time import sleep
 
 def mk_stp_pkt(root_id, hops, hwsrc="20:00:00:00:00:01", hwdst="ff:ff:ff:ff:ff:ff"):
     spm = SpanningTreeMessage(root=root_id, hops_to_root=hops)
-    Ethernet.add_next_header_class(EtherType.SLOW, SpanningTreeMessage)
     pkt = Ethernet(src=hwsrc,
                    dst=hwdst,
                    ethertype=EtherType.SLOW) + spm
@@ -32,9 +31,6 @@ def main (net):
     hops = 0
 
     # creating the header
-    # spm = SpanningTreeMessage(id)
-    # spm.hops_to_root("0")
-    # pkt = Ethernet(src="11:22:11:22:11:22", dst="22:33:22:33:22:33", ethertype=EtherType.SLOW) + spm
     pkt = mk_stp_pkt(id, hops)
 
     # flood the STP
@@ -55,11 +51,20 @@ def main (net):
             flood(input_port, my_interfaces, net, packet)
         else:
             if packet[1].root() < id:
-                id = packet[1].root()
-                # update hops?
-                packet[1].hops_to_root(packet[1].hops_to_root())
-                mode[input_port] = True
+                packet[1].hops_to_root(packet[1].hops_to_root())  # update packet root
+                id = packet[1].root()  # update root id
+                hops = packet[1].hops_to_root()  # update switch hops
+                mode[input_port] = True  # set the port to true
                 flood(input_port, my_interfaces, net, packet)
-            else:
-                pass
-
+            elif packet[1].root() == id:
+                if packet[1].hops_to_root() + 1 < hops:
+                    mode[input_port] = True  # set the port to true
+                    packet[1].hops_to_root(packet[1].hops_to_root())  # update packet root
+                    hops = packet[1].hops_to_root()  # update switch hops
+                    flood(input_port, my_interfaces, net, packet)
+                elif packet[1].hops_to_root() + 1 > hops:
+                    pass
+                else:
+                    if input_port in mode:
+                        mode[input_port] = False
+    net.shutdown()
