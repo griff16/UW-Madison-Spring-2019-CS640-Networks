@@ -1,5 +1,6 @@
 from switchyard.lib.userlib import *
 from spanningtreemessage import *
+from time import sleep
 
 class MySwitch_stp:
     def __init__(self, root, hops_to_root):
@@ -26,4 +27,6 @@ def main (net):
 
     # flood the STP
     for intf in my_interfaces:  # flood the packet
-        net.send_packet(intf.name, packet)
+        net.send_packet(intf.name, pkt)
+    timestamp,input_port,packet = net.recv_packet()
+    sleep(2)
