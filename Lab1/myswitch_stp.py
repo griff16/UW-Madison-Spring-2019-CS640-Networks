@@ -30,12 +30,12 @@ def flood (input_port, my_interfaces, mymacs, net, packet, cache, mode, option):
                 cache[packet[0].src] = input_port
 
             if packet[0].dst not in cache or packet[0].dst == "FF:FF:FF:FF:FF:FF":  # check destination
-                helper(input_port, my_interfaces, net, packet)  # flood it
+                helper(input_port, my_interfaces, net, mode, packet)  # flood it
             else:  # update the cache and send
                 cache[packet[0].dst] = cache.pop(packet[0].dst)
                 net.send_packet(cache[packet[0].dst], packet)
     else:  # pkt is stp packet
-        helper(input_port, my_interfaces, net, packet)  # flood it
+        helper(input_port, my_interfaces, net, mode, packet)  # flood it
 
     sleep(2)
 
@@ -69,7 +69,7 @@ def main (net):
         except NoPackets:
             if rootID == id:
                 p = mk_stp_pkt(rootID, hops)  # creating the header
-                helper(None, my_interfaces, mymacs, net, cache, p)  # normal flood
+                helper(None, my_interfaces, mymacs, net, mode, p)  # normal flood
             sleep(2)
             continue
         except Shutdown:
