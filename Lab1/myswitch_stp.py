@@ -11,7 +11,7 @@ def mk_stp_pkt(root_id, hops, hwsrc="20:00:00:00:00:01", hwdst="ff:ff:ff:ff:ff:f
     p = Packet(raw=xbytes)
     return p
 
-def helper (input_port = None, my_interfaces = None, net = None, mode={}, packet=None):  # helper method to flood packets
+def helper (input_port, my_interfaces, net, mode, packet):  # helper method to flood packets
     for intf in my_interfaces:
         if input_port == None or (input_port != intf.name and mode[input_port]):
             net.send_packet(intf.name, packet)
@@ -21,7 +21,6 @@ def flood (input_port, my_interfaces, mymacs, net, packet, cache, mode, option):
         if packet[0].dst in mymacs:
             log_debug ("Packet intended for me")
         else:
-            log_info(packet[0].src, packet[0].dst)
             if packet[0].src in cache:  # check src
                 if input_port != cache[packet[0].src]:  # when the port is not the same
                     cache[packet[0].src] = input_port
@@ -58,7 +57,7 @@ def main (net):
     cache = dict()       # for regular packet use
     mode = {}            # initializing ports to forwarding mode
     for intf in my_interfaces:
-        mode[intf] = True
+        mode[intf.name] = True
 
     pkt = mk_stp_pkt(rootID, hops)  # creating the header
     for intf in  my_interfaces:
@@ -66,11 +65,11 @@ def main (net):
 
     while True:
         try:
-
             timestamp,input_port,packet = net.recv_packet()
         except NoPackets:
             if rootID == id:
-                flood(input_port, my_interfaces, mymacs, net, pkt, cache, option=1)  # regular packet, flood with 0
+                p = mk_stp_pkt(rootID, hops)  # creating the header
+                helper(None, my_interfaces, mymacs, net, cache, p)  # normal flood
             sleep(2)
             continue
         except Shutdown:
