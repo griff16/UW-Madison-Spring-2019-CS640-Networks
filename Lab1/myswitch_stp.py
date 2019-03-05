@@ -13,6 +13,8 @@ def mk_stp_pkt(root_id, hops, hwsrc="20:00:00:00:00:01", hwdst="ff:ff:ff:ff:ff:f
 
 def helper (input_port, my_interfaces, net, mode, packet):  # helper method to flood packets
     for intf in my_interfaces:
+        log_info(input_port)
+        log_info(mode)
         if input_port == None or (input_port != intf.name and mode[input_port]):
             net.send_packet(intf.name, packet)
 
@@ -30,11 +32,14 @@ def flood (input_port, my_interfaces, mymacs, net, packet, cache, mode, option):
                 cache[packet[0].src] = input_port
 
             if packet[0].dst not in cache or packet[0].dst == "FF:FF:FF:FF:FF:FF":  # check destination
+                log_info("88888888888888888888888888888888888888888888888888888888")
+                log_info(packet[0].dst)
                 helper(input_port, my_interfaces, net, mode, packet)  # flood it
             else:  # update the cache and send
                 cache[packet[0].dst] = cache.pop(packet[0].dst)
                 net.send_packet(cache[packet[0].dst], packet)
     else:  # pkt is stp packet
+        log_info("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         helper(input_port, my_interfaces, net, mode, packet)  # flood it
 
     sleep(2)
@@ -61,21 +66,26 @@ def main (net):
 
     pkt = mk_stp_pkt(rootID, hops)  # creating the header
     for intf in  my_interfaces:
-        net.send_packets(intf, pkt)
+        net.send_packet(intf, pkt)
 
     while True:
         try:
             timestamp,input_port,packet = net.recv_packet()
         except NoPackets:
             if rootID == id:
-                p = mk_stp_pkt(rootID, hops)  # creating the header
-                helper(None, my_interfaces, mymacs, net, mode, p)  # normal flood
+                p = mk_stp_pkt(rootID, hops)
+                helper(None, my_interfaces, net, mode, p)  # regular packet, flood with 0
             sleep(2)
             continue
         except Shutdown:
             return
 
         if not packet.has_header(SpanningTreeMessage):                           # when the packet is a regular pkt
+            log_info("111111111111111111111111111111111111111111111111")
+            #log_info(input_port)
+            log_info(my_interfaces)
+            log_info(mode)
+            log_info(cache)
             flood(input_port, my_interfaces, mymacs, net, pkt, cache, mode, option=0)  # regular packet, flood with 0
         else:
             if packet[1].root() < rootID:
@@ -84,12 +94,14 @@ def main (net):
                 inPort = input_port                               # update input_port
                 mode[input_port] = True                           # set the port to true
                 hops = packet[1].hops_to_root()                   # update switch hops
+                log_info("0000000000000000000000000000000000000000000000000000000")
                 flood(input_port, my_interfaces, mymacs, net, pkt, cache, mode, option=1)
             elif packet[1].root() == rootID:
                 if packet[1].hops_to_root() + 1 < hops:
                     packet[1].hops_to_root(packet[1].hops_to_root())  # update packet root
                     mode[input_port] = True                           # set the port to true
                     hops = packet[1].hops_to_root()                   # update switch hops
+                    log_info("qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq")
                     flood(input_port, my_interfaces, mymacs, net, pkt, cache, mode, option=1)
                 elif packet[1].hops_to_root() + 1 == hops and input_port != inPort:
                     mode[input_port] = False
