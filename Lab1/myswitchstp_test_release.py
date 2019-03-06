@@ -3,7 +3,8 @@
 Derived from : jsommers switchyard examples"""
 
 from switchyard.lib.userlib import *
-from spanningtreemessage import *
+from spanningtreemessage import SpanningTreeMessage
+from switchyard.lib.userlib import *
 
 def mk_stp_pkt(root_id, hops, hwsrc="20:00:00:00:00:01", hwdst="ff:ff:ff:ff:ff:ff"):
     spm = SpanningTreeMessage(root=root_id, hops_to_root=hops)
@@ -59,12 +60,12 @@ def hub_tests():
     stp_pkt = mk_stp_pkt('30:00:00:00:00:01', 0, hwsrc="30:00:00:00:00:01", hwdst="ff:ff:ff:ff:ff:ff")
     s.expect(PacketInputEvent("eth1", stp_pkt), "Expecting STP packets on eth1: action to be discarded")
 
-    #9. Receive new stp with same root and same hops. The port should go in to blocking mode.
+    #6. Receive new stp with same root and same hops. The port should go in to blocking mode.
     stp_pkt = mk_stp_pkt('10:00:00:00:00:01', 1, hwsrc="10:00:00:00:00:01", hwdst="ff:ff:ff:ff:ff:ff")
     s.expect(PacketInputEvent("eth1", stp_pkt), "Expecting STP packets on eth1 with same root and hops")
     # ------------------------------------------------------------------------------------------------------------
 
-    #10., 11.  A normal packet with destination not learnt should be sent out of ports eth0.
+    #12., 11.  A normal packet with destination not learnt should be sent out of ports eth0.
     reqpkt = mk_pkt("60:00:00:00:00:01", "70:00:00:00:00:01", '192.168.1.100', '172.16.42.2')
     s.expect(PacketInputEvent("eth2", reqpkt, display=Ethernet),
              "An Ethernet frame from 60:00:00:00:00:00 to 70:00:00:00:00:01 should arrive on eth2")
@@ -72,5 +73,6 @@ def hub_tests():
              "Ethernet frame destined for 70:00:00:00:00:01 should be flooded out eth0")
 
     return s
+
 
 scenario = hub_tests()
