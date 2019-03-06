@@ -102,25 +102,25 @@ def main (net):
             flood(input_port, my_interfaces, mymacs, net, pkt, cache, mode, option=0)  # regular packet, flood with 0
         else:
             log_info("CASE OF STP PACKET!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-            if packet.get_header(SpanningTreeMessage).root() < rootID:
+            if packet[1].root < rootID:
                 log_info("NEW ROOT CASE root < rootID!!!!!!!!!!!!!!!!!!!!!")
-                packet[1].hops_to_root(packet[1].hops_to_root())  # update packet root
-                rootID = packet[1].root()                         # update rootID
+                packet[1].hops_to_root = packet[1].hops_to_root + 1  # update packet root
+                rootID = packet[1].root                         # update rootID
                 inPort = input_port                               # update input_port
                 mode[input_port] = True                           # set the port to true
-                hops = packet[1].hops_to_root()                   # update switch hops
+                hops = packet[1].hops_to_root                   # update switch hops
                 log_info("after modifying rootID:" + str(rootID))
                 log_info("after modifying hops:" + str(hops))
-                flood(input_port, my_interfaces, mymacs, net, pkt, cache, mode, option=1)
-            elif packet[1].root() == rootID:
+                flood(input_port, my_interfaces, mymacs, net, packet, cache, mode, option=1)
+            elif packet[1].root == rootID:
                 log_info("ROOT ====== rootID")
-                if packet[1].hops_to_root() + 1 < hops:
+                if packet[1].hops_to_root + 1 < hops:
                     log_info("UPDATE HOPS!!!!!!!!!!!!!!!!!!!!!!!!!!")
-                    packet[1].hops_to_root(packet[1].hops_to_root())  # update packet root
+                    packet[1].hops_to_root(packet[1].hops_to_root)  # update packet root
                     mode[input_port] = True                           # set the port to true
-                    hops = packet[1].hops_to_root()                   # update switch hops
-                    flood(input_port, my_interfaces, mymacs, net, pkt, cache, mode, option=1)
-                elif packet[1].hops_to_root() + 1 == hops and input_port != inPort:
+                    hops = packet[1].hops_to_root                   # update switch hops
+                    flood(input_port, my_interfaces, mymacs, net, packet, cache, mode, option=1)
+                elif packet[1].hops_to_root + 1 == hops and input_port != inPort:
                     log_info("BLOCKING SECTION")
                     log_info("BEFORE BLOCKING mode:"+ mode)
                     mode[input_port] = False
