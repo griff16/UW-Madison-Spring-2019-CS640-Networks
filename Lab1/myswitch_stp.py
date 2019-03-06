@@ -4,6 +4,7 @@ import time
 
 def mk_stp_pkt(root_id, hops, hwsrc="20:00:00:00:00:01", hwdst="ff:ff:ff:ff:ff:ff"):
     spm = SpanningTreeMessage(root=root_id, hops_to_root=hops)
+    Ethernet.add_next_header_class(EtherType.SLOW, SpanningTreeMessage)
     pkt = Ethernet(src=hwsrc,
                    dst=hwdst,
                    ethertype=EtherType.SLOW) + spm
@@ -91,8 +92,6 @@ def main (net):
         log_info("PACKET:"+str(packet))
         log_info("has header:"+str(packet.has_header(SpanningTreeMessage)))
         log_info("input:"+str(input_port))
-        for a in my_interfaces:
-            log_info("interfaces:"+a.name)
         log_info("mode:"+str(mode))
         log_info("cache:"+str(cache))
         log_info("rootID:"+str(rootID))
