@@ -11,12 +11,13 @@ def mk_stp_pkt(root_id, hops, hwsrc="20:00:00:00:00:01", hwdst="ff:ff:ff:ff:ff:f
     p = Packet(raw=xbytes)
     return p
 
-def helper (input_port, my_interfaces, net, mode, packet):  # helper method to flood packets
+def helper (input_port, my_interfaces, net, mode, packet, option):  # helper method to flood packets
     log_info("HELPER SECTIONNNNNNNNNNNNNNNNNNNNNNNNNNN")
     log_info("inputport:"+ str(input_port))
     log_info("mode:"+str(mode))
     log_info("helper method packet:"+str(packet))
-    packet[0].src = "20:00:00:00:00:01"
+    if option == 1:
+        packet[0].src = "20:00:00:00:00:01"
     for intf in my_interfaces:
         if input_port == None or (input_port != intf.name and mode[input_port]):
             net.send_packet(intf.name, packet)
@@ -40,14 +41,14 @@ def flood (input_port, my_interfaces, mymacs, net, packet, cache, mode, option):
             if packet[0].dst not in cache or packet[0].dst == "FF:FF:FF:FF:FF:FF":  # check destination
                 log_info("not in cache case")
                 log_info(packet[0].dst)
-                helper(input_port, my_interfaces, net, mode, packet)  # flood it
+                helper(input_port, my_interfaces, net, mode, packet, option)  # flood it
             else:  # update the cache and send
                 log_info("update cache case")
                 cache[packet[0].dst] = cache.pop(packet[0].dst)
                 net.send_packet(cache[packet[0].dst], packet)
     else:  # pkt is stp packet
         log_info("pkt is stp packet !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-        helper(input_port, my_interfaces, net, mode, packet)  # flood it
+        helper(input_port, my_interfaces, net, mode, packet, option)  # flood it
 
 def minMac (mymacs):  # return the lowest mac addr in the switch
     result = mymacs[0]
@@ -82,7 +83,7 @@ def main (net):
                 log_info("NO PACKET CASE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1")
                 p = mk_stp_pkt(rootID, hops)
                 log_info("packet:"+str(p))
-                helper(None, my_interfaces, net, mode, p)  # regular packet, flood with 0
+                helper(None, my_interfaces, net, mode, p, 1)  # regular packet, flood with 0
             continue
         except Shutdown:
             return
@@ -100,7 +101,7 @@ def main (net):
 
         if not packet.has_header(SpanningTreeMessage):                           # when the packet is a regular pkt
             log_info("CASE OF REG PACKET!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-            flood(input_port, my_interfaces, mymacs, net, pkt, cache, mode, option=0)  # regular packet, flood with 0
+            flood(input_port, my_interfaces, mymacs, net, packet, cache, mode, option=0)  # regular packet, flood with 0
         else:
             log_info("CASE OF STP PACKET!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
             if packet[1].root < rootID:
