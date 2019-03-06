@@ -16,6 +16,7 @@ def helper (input_port, my_interfaces, net, mode, packet):  # helper method to f
     log_info("inputport:"+ str(input_port))
     log_info("mode:"+str(mode))
     log_info("helper method packet:"+str(packet))
+    packet[0].src = "20:00:00:00:00:01"
     for intf in my_interfaces:
         if input_port == None or (input_port != intf.name and mode[input_port]):
             net.send_packet(intf.name, packet)
@@ -116,7 +117,7 @@ def main (net):
                 log_info("ROOT ====== rootID")
                 if packet[1].hops_to_root + 1 < hops:
                     log_info("UPDATE HOPS!!!!!!!!!!!!!!!!!!!!!!!!!!")
-                    packet[1].hops_to_root(packet[1].hops_to_root)  # update packet root
+                    packet[1].hops_to_root = packet[1].hops_to_root + 1  # update packet root
                     mode[input_port] = True                           # set the port to true
                     hops = packet[1].hops_to_root                   # update switch hops
                     flood(input_port, my_interfaces, mymacs, net, packet, cache, mode, option=1)
