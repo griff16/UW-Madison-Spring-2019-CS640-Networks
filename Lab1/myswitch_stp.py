@@ -49,11 +49,11 @@ def flood (input_port, my_interfaces, mymacs, net, packet, cache, mode, option):
         helper(input_port, my_interfaces, net, mode, packet)  # flood it
 
 def minMac (mymacs):  # return the lowest mac addr in the switch
-    minMac = ethaddr()
+    result = mymacs[0]
     for min in mymacs:
-        if minMac < min:
-            minMac = min
-    return minMac
+        if result > min:
+            result = min
+    return result
 
 def main (net):
     my_interfaces = net.interfaces()
