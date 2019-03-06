@@ -18,12 +18,22 @@ def helper (input_port, my_interfaces, net, mode, packet, option):  # helper met
     log_info("mode:"+str(mode))
     log_info("helper method packet:"+str(packet))
     if option == 1:
-        packet[0].src = "20:00:00:00:00:01"
+        for intf in my_interfaces:
+            if (intf.name == "eth0"):
+                    packet[0].src = intf.ethaddr 
+
     for intf in my_interfaces:
-        if input_port == None or (input_port != intf.name and mode[input_port]):
+        if input_port == None or (input_port != intf.name and mode[intf.name]):
+            log_info("interfaces: " + str(my_interfaces[0]) + " " + str(my_interfaces[1]) + " " + str(my_interfaces[2])) 
+            log_info("input_port: " + str(input_port)) 
+            log_info("mode: " + str(mode)) 
+            log_info("intf: " + str(intf))
             net.send_packet(intf.name, packet)
 
-def flood (input_port, my_interfaces, mymacs, net, packet, cache, mode, option):  # handle mode situation
+def LRUhelper(x):
+    return x[1][1] 
+
+def flood (input_port, my_interfaces, mymacs, net, packet, cache, mode, timestamp, option):  # handle mode situation
     log_info("FLODDDDDDDDDDDDDDDDD SECTIONNNNNNNNNNNNNNNNNNNNN")
     if option == 0:  # pkt is regular pkt
         log_info("pkt is regular pkt!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
@@ -33,10 +43,13 @@ def flood (input_port, my_interfaces, mymacs, net, packet, cache, mode, option):
             if packet[0].src in cache:  # check src
                 if input_port != cache[packet[0].src]:  # when the port is not the same
                     cache[packet[0].src] = input_port
-            else:  # table does not contain entry for src address
-                if len(cache) == 5:
-                    cache.pop(list(cache)[0])
-                cache[packet[0].src] = input_port
+
+
+            if packet[0].src not in cache: #table does not contain entry for src address 
+                if len(cache.keys()) >= 5:
+                    LRU = sorted(cache.items(), key=LRUhelper)
+                    cache.pop(LRU[0][0], None) 
+                cache[packet[0].src] = (input_port, timestamp)
 
             log_info("sendinggggggggg out packet:" + str(packet))
             if packet[0].dst not in cache or packet[0].dst == "FF:FF:FF:FF:FF:FF":  # check destination
@@ -45,8 +58,9 @@ def flood (input_port, my_interfaces, mymacs, net, packet, cache, mode, option):
                 helper(input_port, my_interfaces, net, mode, packet, option)  # flood it
             else:  # update the cache and send
                 log_info("update cache case")
-                cache[packet[0].dst] = cache.pop(packet[0].dst)
-                net.send_packet(cache[packet[0].dst], packet)
+                cache[packet[0].dst] = (cache[packet[0].dst][0], time.time())
+                net.send_packet(cache[packet[0].dst][0], packet)
+
     else:  # pkt is stp packet
         log_info("pkt is stp packet !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         helper(input_port, my_interfaces, net, mode, packet, option)  # flood it
@@ -85,6 +99,7 @@ def main (net):
                 p = mk_stp_pkt(rootID, hops)
                 log_info("packet:"+str(p))
                 helper(None, my_interfaces, net, mode, p, 1)  # regular packet, flood with 0
+                sent = time.time() 
             continue
         except Shutdown:
             return
@@ -96,11 +111,10 @@ def main (net):
         log_info("cache:"+str(cache))
         log_info("rootID:"+str(rootID))
         log_info("hops:"+ str(hops))
-        log_info("port stored:"+str(inPort))
 
         if not packet.has_header(SpanningTreeMessage):                           # when the packet is a regular pkt
             log_info("CASE OF REG PACKET!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-            flood(input_port, my_interfaces, mymacs, net, packet, cache, mode, option=0)  # regular packet, flood with 0
+            flood(input_port, my_interfaces, mymacs, net, packet, cache, mode, timestamp, option=0) #egular packet, flood with 0
         else:
             log_info("CASE OF STP PACKET!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
             if packet[1].root < rootID:
@@ -112,18 +126,19 @@ def main (net):
                 hops = packet[1].hops_to_root                   # update switch hops
                 log_info("after modifying rootID:" + str(rootID))
                 log_info("after modifying hops:" + str(hops))
-                flood(input_port, my_interfaces, mymacs, net, packet, cache, mode, option=1)
+                flood(input_port, my_interfaces, mymacs, net, packet, cache, mode, timestamp, option=1)
             elif packet[1].root == rootID:
                 log_info("ROOT ====== rootID")
                 if packet[1].hops_to_root + 1 < hops:
                     log_info("UPDATE HOPS!!!!!!!!!!!!!!!!!!!!!!!!!!")
-                    packet[1].hops_to_root = packet[1].hops_to_root + 1  # update packet root
+                    inPort = input_port
+                    packet[1].hops_to_root = packet[1].hops_to_root + 1
                     mode[input_port] = True                           # set the port to true
                     hops = packet[1].hops_to_root                   # update switch hops
-                    flood(input_port, my_interfaces, mymacs, net, packet, cache, mode, option=1)
+                    flood(input_port, my_interfaces, mymacs, net, packet, cache, mode, timestamp, option=1)
                 elif packet[1].hops_to_root + 1 == hops and input_port != inPort:
                     log_info("BLOCKING SECTION")
-                    log_info("BEFORE BLOCKING mode:"+ mode)
+                    log_info("BEFORE BLOCKING mode:"+ str(mode))
                     mode[input_port] = False
-                    log_info("AFTER BLOCKING mode:"+ mode)
+                    log_info("AFTER BLOCKING mode:"+ str(mode))
     net.shutdown()
