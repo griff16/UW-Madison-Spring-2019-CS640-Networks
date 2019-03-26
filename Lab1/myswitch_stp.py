@@ -2,7 +2,7 @@ from switchyard.lib.userlib import *
 from spanningtreemessage import *
 import time 
 
-def mk_stp_pkt(root_id, hops, hwsrc="20:00:00:00:00:01", hwdst="ff:ff:ff:ff:ff:ff"):
+def mk_stp_pkt(root_id, hops, hwsrc, hwdst):
     spm = SpanningTreeMessage(root=root_id, hops_to_root=hops)
     Ethernet.add_next_header_class(EtherType.SLOW, SpanningTreeMessage)
     pkt = Ethernet(src=hwsrc,
@@ -50,19 +50,27 @@ def flood (input_port, my_interfaces, mymacs, net, packet, cache, mode, timestam
     else:  # pkt is stp packet
         helper(input_port, my_interfaces, net, mode, packet, option)  # flood it
 
-def minMac (mymacs):  # return the lowest mac addr in the switch
+def minMac (mymacs, my_interfaces):  # return the lowest mac addr in the switch
     result = mymacs[0]
+
+    for intf in my_interfaces:
+        if (intf.name == "eth0"):
+            src = intf.ethaddr
+
     for min in mymacs:
         if result > min:
             result = min
-    return result
+    return result, src
 
 def main (net):
     my_interfaces = net.interfaces()
     mymacs = [intf.ethaddr for intf in my_interfaces]
 
+    src = "20:00:00:00:00:01"
+    dst = "ff:ff:ff:ff:ff:ff" 
+
     sent = time.time()
-    id = minMac(mymacs)  # own id
+    id, src = minMac(mymacs, my_interfaces)  # own id
     rootID = id          # possibile rootID
     hops = 0             # keeping track of hops
     inPort = None        # keeping track of the inputPort of the root
@@ -71,7 +79,7 @@ def main (net):
     for intf in my_interfaces:
         mode[intf.name] = True
 
-    pkt = mk_stp_pkt(rootID, hops)  # creating the header
+    pkt = mk_stp_pkt(rootID, hops, src, dst)  # creating the header
     for intf in  my_interfaces:
         net.send_packet(intf, pkt)
 
@@ -80,7 +88,7 @@ def main (net):
             timestamp,input_port,packet = net.recv_packet()
         except NoPackets:
             if rootID == id and time.time() - sent >= 2:
-                p = mk_stp_pkt(rootID, hops)
+                p = mk_stp_pkt(rootID, hops, src, dst)
                 helper(None, my_interfaces, net, mode, p, 1)  # regular packet, flood with 0
                 sent = time.time() 
             continue
