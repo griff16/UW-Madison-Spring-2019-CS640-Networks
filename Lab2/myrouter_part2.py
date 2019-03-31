@@ -7,6 +7,7 @@ Basic IPv4 router (static routing) in Python.
 import sys
 import os
 import time
+from switchyard.lib.address import *
 
 from switchyard.lib.packet.util import *
 from switchyard.lib.userlib import *
@@ -21,9 +22,20 @@ class Router(object):
         f = open("forwarding_table.txt", "r")
         self.router_table = []
         for row in f:
-            log_info(row)
+            self.router_table.append(row.rstrip().split(" "))
 
-    def router_main(self):    
+    def findMatch(self, pkt):
+        destaddr = IPv4Address(pkt.hey_header(Ethernet).dst)
+        index = None
+
+        for row in self.router_table:
+            prefix = IPv4Address(row[0])
+
+            if (int(row[1]) & int(destaddr)) == int(prefix):
+                index = row
+        return row[-1] if index is not None else None
+
+    def router_main(self):
         '''
         Main method for router; we stay in a loop in this method, receiving
         packets until the end of time.
@@ -33,10 +45,14 @@ class Router(object):
             try:
                 timestamp,dev,pkt = self.net.recv_packet(timeout=1.0)
                 log_info(self.ipaddrlist) 
-                arp = pkt.get_header(Arp) 
-                if (arp is not None):
+                arp = pkt.get_header(Arp)
+                ipv4 = pkt.get_header(IPv4)
+
+                out_port = self.findMatch(pkt)
+
+                if arp is not None:
                     log_info("ARP PACKET") 
-                    if(arp.operation == ArpOperation.Request):
+                    if arp.operation == ArpOperation.Request:
                         log_info("ARP REQUEST RECEIVED") 
                         if arp.targetprotoaddr in self.ipaddrlist:
                             log_info("SENDING ARP REPLY") 
@@ -48,6 +64,8 @@ class Router(object):
                         if arp.targetprotoaddr in self.ipaddrlist:
                             self.arp_table[arp.senderprotoaddr] = arp.senderhwaddr
                             log_info(self.arp_table) 
+                elif ipv4 is not None:  # handling ipv4 packet
+                    print("")
                 else:
                     log_info("DROPPED PACKET")                      
             except NoPackets:
