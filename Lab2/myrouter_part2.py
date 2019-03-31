@@ -30,10 +30,9 @@ class Router(object):
 
         for row in self.router_table:
             prefix = IPv4Address(row[0])
-
             if (int(row[1]) & int(destaddr)) == int(prefix):
                 index = row
-        return row[-1] if index is not None else None
+        return row[-1], row[-2] if index is not None else None, None
 
     def router_main(self):
         '''
@@ -47,8 +46,6 @@ class Router(object):
                 log_info(self.ipaddrlist) 
                 arp = pkt.get_header(Arp)
                 ipv4 = pkt.get_header(IPv4)
-
-                out_port = self.findMatch(pkt)
 
                 if arp is not None:
                     log_info("ARP PACKET") 
@@ -65,6 +62,23 @@ class Router(object):
                             self.arp_table[arp.senderprotoaddr] = arp.senderhwaddr
                             log_info(self.arp_table) 
                 elif ipv4 is not None:  # handling ipv4 packet
+                    outport, nxthop = self.findMatch(pkt)
+                    if nxthop is not None or nxthop is not None:  # otherwise drop the pkt
+                        ipv4.ttl = ipv4.ttl - 1
+
+                        if nxthop in self.arp_table:  # if in the table then use it
+                            pkt = ipv4 + Ethernet(src=self.net.interface_by_name(outport).ethaddr, dst=self.arp_table[nxthop], ethertype = Ethernet.IPv4)
+                            self.net.send_packet(outport, pkt)
+                        else:  # ARP querry
+                            ethsrc = self.net.interface_by_name(outport)
+                            reply_pkt = create_ip_arp_request(ethsrc.ethaddr, "2", nxthop)
+
+                            # create Eth header
+                            ethHeader = Ethernet(ethsrc.ethaddr, dst = reply_pkt.get_header(Arp).senderprotoaddr, ethertype=EtherType.IPv4)
+
+                            # send the pkt that has IPv4 and new Eth header
+                            self.net.send_packet(outport, ethHeader+ipv4)
+
                     print("")
                 else:
                     log_info("DROPPED PACKET")                      
