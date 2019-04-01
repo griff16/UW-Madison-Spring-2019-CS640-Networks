@@ -24,15 +24,23 @@ class Router(object):
         for row in f:
             self.router_table.append(row.rstrip().split(" "))
 
-    def findMatch(self, pkt):
+    def findMatch(self, pkt):  # return output port and next hop which can be None
         destaddr = IPv4Address(pkt.hey_header(Ethernet).dst)
         index = None
 
         for row in self.router_table:
-            prefix = IPv4Address(row[0])
-            if (int(row[1]) & int(destaddr)) == int(prefix):
-                index = row
-        return row[-1], row[-2] if index is not None else None, None
+            tokens = row.split(" ")
+            prefix = IPv4Address(tokens[0])
+            if (int(tokens[1]) & int(destaddr)) == int(prefix):  # do longest substring match fix me later
+                index = tokens
+
+        if index is None:
+            return None, None
+        else:
+            if len(index) == 3:
+                return row[-1], None
+            else:
+                return row[-1], row[-2]
 
     def router_main(self):
         '''
@@ -53,8 +61,8 @@ class Router(object):
                         if arp.targetprotoaddr in self.ipaddrlist:
                             log_info("SENDING ARP REPLY") 
                             ethsrc = self.net.interface_by_ipaddr(arp.targetprotoaddr)  
-                            reply_pkt = create_ip_arp_reply(ethsrc.ethaddr, arp.senderhwaddr, arp.targetprotoaddr, arp.senderprotoaddr) 
-                            self.net.send_packet(dev, reply_pkt) 
+                            reply_pkt = create_ip_arp_reply(ethsrc.ethaddr, arp.senderhwaddr, arp.targetprotoaddr, arp.senderprotoaddr)
+                            self.net.send_packet(dev, reply_pkt)
                     else:  # this should probably change to arp.operation == ArpOperation.Reply
                         log_info("ARP REPLY RECEIVED")
                         if arp.targetprotoaddr in self.ipaddrlist:
@@ -62,23 +70,33 @@ class Router(object):
                             log_info(self.arp_table) 
                 elif ipv4 is not None:  # handling ipv4 packet
                     outport, nxthop = self.findMatch(pkt)
-                    if nxthop is not None or nxthop is not None:  # otherwise drop the pkt
+
+                    if outport is not None:  # pkt has found a hit from the table
+                        ethsrc = self.net.interface_by_name(outport)
                         ipv4.ttl = ipv4.ttl - 1
 
                         if nxthop in self.arp_table:  # if in the table then use it
-                            pkt = ipv4 + Ethernet(src=self.net.interface_by_name(outport).ethaddr, dst=self.arp_table[nxthop], ethertype = Ethernet.IPv4)
+                            pkt = ipv4 + Ethernet(src=ethsrc.ethaddr, dst=self.arp_table[nxthop], ethertype = Ethernet.IPv4)
                             self.net.send_packet(outport, pkt)
                         else:  # ARP querry
-                            ethsrc = self.net.interface_by_name(outport)
-                            reply_pkt = create_ip_arp_request(ethsrc.ethaddr, "2", nxthop)
+                            querrypkt = create_ip_arp_request(ethsrc.ethaddr, "2", nxthop)
+                            self.net.send_packet(outport, querrypkt)
 
-                            # create Eth header
-                            ethHeader = Ethernet(ethsrc.ethaddr, dst = reply_pkt.get_header(Arp).senderprotoaddr, ethertype=EtherType.IPv4)
+                            count = 1
+                            while count <= 3:
+                                try:
+                                    timestamp,inport,packet = self.net.recv_packet(timeout=1.0)
 
-                            # send the pkt that has IPv4 and new Eth header
-                            self.net.send_packet(outport, ethHeader+ipv4)
+                                    # create Eth header
+                                    ethHeader = Ethernet(ethsrc.ethaddr, dst=packet.get_header(Arp).senderhwaddr, ethertype=EtherType.IPv4)
 
-                    print("")
+                                    # send the pkt that has IPv4 and new Eth header
+                                    self.net.send_packet(outport, ethHeader+ipv4)
+                                except NoPackets:
+                                    i = i + 1
+                                    log_debug("No packets available from arp request")
+                    else:  # otherwise drop the pkt
+                        log_info("ipv4 packt has been dropped")
                 else:
                     log_info("DROPPED PACKET")                      
             except NoPackets:
