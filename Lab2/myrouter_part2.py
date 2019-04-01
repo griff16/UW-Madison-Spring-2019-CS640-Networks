@@ -43,7 +43,6 @@ class Router(object):
             gotpkt = True
             try:
                 timestamp,dev,pkt = self.net.recv_packet(timeout=1.0)
-                log_info(self.ipaddrlist) 
                 arp = pkt.get_header(Arp)
                 ipv4 = pkt.get_header(IPv4)
 
