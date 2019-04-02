@@ -25,7 +25,7 @@ class Router(object):
             self.router_table.append(row.rstrip().split(" "))
 
     def findMatch(self, pkt):  # return output port and next hop which can be None
-        destaddr = IPv4Address(pkt.hey_header(Ethernet).dst)
+        destaddr = IPv4Address(pkt.get_header(Ethernet).dst)
         index = None
 
         for row in self.router_table:
