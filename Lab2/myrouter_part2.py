@@ -49,7 +49,7 @@ class Router(object):
             return None, None
         else:
             if len(index) == 3:
-                return row[-1], None
+                return row[-1], destaddr
             else:
                 return row[-1], row[-2]
 
@@ -83,15 +83,15 @@ class Router(object):
                     outport, nxthop = self.findMatch(pkt)  # return None, None when there is no hit, or the dst is for the router
 
                     if outport is not None:  # pkt has found a hit from the table
-                        ethsrc = self.net.interface_by_name(outport)
+                        port = self.net.interface_by_name(outport)
                         ipv4.ttl = ipv4.ttl - 1
 
                         if nxthop in self.arp_table:  # if in the table then use it
-                            pkt = ipv4 + Ethernet(src=ethsrc.ethaddr, dst=self.arp_table[nxthop], ethertype = Ethernet.IPv4)
+                            pkt[Ethernet].src = port.ethaddr
+                            pkt[Ethernet].dst = self.arp_table[nxthop]
                             self.net.send_packet(outport, pkt)
                         else:  # ARP querry
-                            querrypkt = create_ip_arp_request(ethsrc.ethaddr, "2", nxthop)
-                            self.net.send_packet(outport, querrypkt)
+                            self.net.send_packet(outport, create_ip_arp_request(port.ethaddr, port.ipaddr, nxthop))
 
                             # count = 1
                             # while count <= 3:
@@ -119,8 +119,6 @@ class Router(object):
 
             if gotpkt:
                 log_debug("Got a packet: {}".format(str(pkt)))
-
-
 
 def main(net):
     '''
