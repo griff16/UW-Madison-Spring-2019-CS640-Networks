@@ -37,13 +37,12 @@ class Router(object):
             return None, None
 
         for row in self.router_table:
-            tokens = row.split(" ")
-            network = IPv4Network(str(tokens[0])+"/"+str(tokens[1]))
+            network = IPv4Network(str(row[0])+"/"+str(row[1]))
 
             if destaddr in network:
                 if network.prefixlen > longest:
                     longest = network.prefixlen
-                    index = tokens
+                    index = row
 
         if index is None:
             return None, None
