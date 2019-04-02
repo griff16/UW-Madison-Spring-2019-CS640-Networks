@@ -8,7 +8,6 @@ import sys
 import os
 import time
 from switchyard.lib.address import *
-
 from switchyard.lib.packet.util import *
 from switchyard.lib.userlib import *
 
@@ -30,14 +29,21 @@ class Router(object):
             self.router_table.append([IPv4Address(prefix),intf.netmask,None,intf.name])
 
     def findMatch(self, pkt):  # return output port and next hop which can be None
-        destaddr = IPv4Address(pkt.get_header(Ethernet).dst)
+        destaddr = IPv4Address(pkt.get_header(IPv4).dst)
         index = None
+        longest = -1
+
+        if destaddr in self.ipaddrlist:  # drop packet case
+            return None, None
 
         for row in self.router_table:
             tokens = row.split(" ")
-            prefix = IPv4Address(tokens[0])
-            if (int(tokens[1]) & int(destaddr)) == int(prefix):  # do longest substring match fix me later
-                index = tokens
+            netowork = IPv4Address(tokens[0]+"/"+tokens[1])
+
+            if destaddr in netowork:
+                if netowork.prefixlen > longest:
+                    longest = netowork.prefixlen
+                    index = tokens
 
         if index is None:
             return None, None
@@ -74,7 +80,7 @@ class Router(object):
                             self.arp_table[arp.senderprotoaddr] = arp.senderhwaddr
                             log_info(self.arp_table) 
                 elif ipv4 is not None:  # handling ipv4 packet
-                    outport, nxthop = self.findMatch(pkt)
+                    outport, nxthop = self.findMatch(pkt)  # return None, None when there is no hit, or the dst is for the router
 
                     if outport is not None:  # pkt has found a hit from the table
                         ethsrc = self.net.interface_by_name(outport)
@@ -87,19 +93,19 @@ class Router(object):
                             querrypkt = create_ip_arp_request(ethsrc.ethaddr, "2", nxthop)
                             self.net.send_packet(outport, querrypkt)
 
-                            count = 1
-                            while count <= 3:
-                                try:
-                                    timestamp,inport,packet = self.net.recv_packet(timeout=1.0)
-
-                                    # create Eth header
-                                    ethHeader = Ethernet(ethsrc.ethaddr, dst=packet.get_header(Arp).senderhwaddr, ethertype=EtherType.IPv4)
-
-                                    # send the pkt that has IPv4 and new Eth header
-                                    self.net.send_packet(outport, ethHeader+ipv4)
-                                except NoPackets:
-                                    count = count + 1
-                                    log_debug("No packets available from arp request")
+                            # count = 1
+                            # while count <= 3:
+                            #     try:
+                            #         timestamp,inport,packet = self.net.recv_packet(timeout=1.0)
+                            #
+                            #         # create Eth header
+                            #         ethHeader = Ethernet(ethsrc.ethaddr, dst=packet.get_header(Arp).senderhwaddr, ethertype=EtherType.IPv4)
+                            #
+                            #         # send the pkt that has IPv4 and new Eth header
+                            #         self.net.send_packet(outport, ethHeader+ipv4)
+                            #     except NoPackets:
+                            #         count = count + 1
+                            #         log_debug("No packets available from arp request")
                     else:  # otherwise drop the pkt
                         log_info("ipv4 packt has been dropped")
                 else:
