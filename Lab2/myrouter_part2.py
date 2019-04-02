@@ -19,10 +19,15 @@ class Router(object):
         self.my_interfaces = self.net.interfaces()
         self.ipaddrlist = [interfaces.ipaddr for interfaces in self.my_interfaces] 
         self.arp_table = {}
-        f = open("forwarding_table.txt", "r")
         self.router_table = []
+        self.queue = []
+
+        f = open("forwarding_table.txt", "r")
         for row in f:
             self.router_table.append(row.rstrip().split(" "))
+        for intf in self.my_interfaces:
+            prefix = int(intf.ipaddr) & int(intf.netmask)
+            self.router_table.append([IPv4Address(prefix),intf.netmask,None,intf.name])
 
     def findMatch(self, pkt):  # return output port and next hop which can be None
         destaddr = IPv4Address(pkt.get_header(Ethernet).dst)
@@ -93,7 +98,7 @@ class Router(object):
                                     # send the pkt that has IPv4 and new Eth header
                                     self.net.send_packet(outport, ethHeader+ipv4)
                                 except NoPackets:
-                                    i = i + 1
+                                    count = count + 1
                                     log_debug("No packets available from arp request")
                     else:  # otherwise drop the pkt
                         log_info("ipv4 packt has been dropped")
