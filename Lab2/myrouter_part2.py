@@ -38,17 +38,17 @@ class Router(object):
 
         for row in self.router_table:
             tokens = row.split(" ")
-            netowork = IPv4Address(tokens[0]+"/"+tokens[1])
+            network = IPv4Network(str(tokens[0])+"/"+str(tokens[1]))
 
-            if destaddr in netowork:
-                if netowork.prefixlen > longest:
-                    longest = netowork.prefixlen
+            if destaddr in network:
+                if network.prefixlen > longest:
+                    longest = network.prefixlen
                     index = tokens
 
         if index is None:
             return None, None
         else:
-            if len(index) == 3:
+            if index[2] == None:
                 return row[-1], destaddr
             else:
                 return row[-1], row[-2]
@@ -92,20 +92,8 @@ class Router(object):
                             self.net.send_packet(outport, pkt)
                         else:  # ARP querry
                             self.net.send_packet(outport, create_ip_arp_request(port.ethaddr, port.ipaddr, nxthop))
+                            # add it to queue
 
-                            # count = 1
-                            # while count <= 3:
-                            #     try:
-                            #         timestamp,inport,packet = self.net.recv_packet(timeout=1.0)
-                            #
-                            #         # create Eth header
-                            #         ethHeader = Ethernet(ethsrc.ethaddr, dst=packet.get_header(Arp).senderhwaddr, ethertype=EtherType.IPv4)
-                            #
-                            #         # send the pkt that has IPv4 and new Eth header
-                            #         self.net.send_packet(outport, ethHeader+ipv4)
-                            #     except NoPackets:
-                            #         count = count + 1
-                            #         log_debug("No packets available from arp request")
                     else:  # otherwise drop the pkt
                         log_info("ipv4 packt has been dropped")
                 else:
