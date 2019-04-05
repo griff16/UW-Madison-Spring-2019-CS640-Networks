@@ -92,6 +92,9 @@ def router_tests():
     # TODO for students: Write your own test for the above mentioned comment. This is not a deliverable. But will help
     #  you test if your code is correct or not.
 
+
+    s.expect(PacketInputEvent("router-eth0", packet), "dynamic routing should arrive on eth0")
+
     return s
 
 scenario = router_tests()
