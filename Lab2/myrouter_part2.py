@@ -140,7 +140,7 @@ class Router(object):
                             dest_port = self.queue[k].getOutport() 
                             for packet in self.queue[k].getPktList(): 
                                  if not packet.get_header(Ethernet):
-                                      packet += Ethernet()
+                                    packet += Ethernet()
                                  packet[Ethernet].src = self.net.interface_by_name(dest_port).ethaddr
                                  log_info("CLEARS ETHADDR") 
                                  packet[Ethernet].dst = arp.senderhwaddr
@@ -159,6 +159,8 @@ class Router(object):
                         ipv4.ttl = ipv4.ttl - 1
 
                         if nxthop in self.arp_table:  # if in the table then use it
+                            if not pkt.get_header(Ethernet):
+                                pkt += Ethernet() 
                             pkt[Ethernet].src = port.ethaddr
                             pkt[Ethernet].dst = self.arp_table[nxthop]
                             self.net.send_packet(outport, pkt)

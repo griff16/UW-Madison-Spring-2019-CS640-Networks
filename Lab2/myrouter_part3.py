@@ -87,7 +87,7 @@ class Router(object):
        
 
         destaddr = pkt.get_header(IPv4).dst
-        
+        log_info(destaddr)     
         # check DYN first 
         log_info("MATCH TIME")
         dyn_index = None 
@@ -101,10 +101,10 @@ class Router(object):
                 pre = dyn_network.prefixlen
                 dyn_longest = pre
                 dyn_index = i 
-
+    
         index = None
         longest = 0
-
+        log_info(self.router_table) 
         for row in self.router_table:
             network = IPv4Network(str(row[0])+'/'+str(row[1]))
 
@@ -117,9 +117,11 @@ class Router(object):
         if destaddr in self.ipaddrlist: #drop packet 
             return None, None 
         
-
+        log_info(dyn_index)
+        log_info(dyn_index[1]) 
+        log_info(dyn_index[0])  
         if dyn_index:
-            return dyn_index[1], dyn_index[0].next_hop() 
+            return dyn_index[1], dyn_index[0].next_hop 
 
 
         if index is None:
@@ -146,10 +148,12 @@ class Router(object):
                 ipv4 = pkt.get_header(IPv4)
                 dyn = pkt.get_header(DynamicRoutingMessage) 
                 if dyn is not None:
-                    log_info("DYN")
-                    self.dyn_table.append([dyn,dev]) # dev is the input port of the packet 
-                    log_info(self.dyn_table) 
+                    log_info("DYN") 
+                    self.dyn_table.append([dyn,dev]) # dev is the input port of the packet
+                    log_info(self.dyn_table)
+                    log_info(len(self.dyn_table)) 
                     if len(self.dyn_table) > 5:
+                        log_info("POPPING DYN")
                         self.dyn_table.pop(0)
     
                 if arp is not None:
@@ -199,7 +203,9 @@ class Router(object):
                         else:  # ARP querry
                             if nxthop in self.queue:
                                 self.queue[nxthop].addPkt(pkt) 
-
+                            log_info("HERE")
+                            log_info(outport)
+                            log_info(nxthop)  
                             self.net.send_packet(outport, create_ip_arp_request(port.ethaddr, port.ipaddr, nxthop))
                             # add it to queue
                             log_info("ADDING TO QUEUE") 

@@ -39,7 +39,7 @@ class Router(object):
                             ethsrc = self.net.interface_by_ipaddr(arp.targetprotoaddr)  
                             reply_pkt = create_ip_arp_reply(ethsrc.ethaddr, arp.senderhwaddr, arp.targetprotoaddr, arp.senderprotoaddr) 
                             self.net.send_packet(dev, reply_pkt) 
-                    else:  # this should probably change to arp.operation == ArpOperation.Reply
+                    else:
                         log_info("ARP REPLY RECEIVED")
                         if arp.targetprotoaddr in self.ipaddrlist:
                             self.arp_table[arp.senderprotoaddr] = arp.senderhwaddr
