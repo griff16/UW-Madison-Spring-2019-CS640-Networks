@@ -6,6 +6,13 @@ from switchyard.lib.userlib import *
 from threading import *
 import time
 
+def print_output(total_time, num_ret, num_tos, throughput, goodput):
+    print("Total TX time (s): " + str(total_time))
+    print("Number of reTX: " + str(num_ret))
+    print("Number of coarse TOs: " + str(num_tos))
+    print("Throughput (Bps): " + str(throughput))
+    print("Goodput (Bps): " + str(goodput))
+
 def switchy_main(net):
     my_interfaces = net.interfaces()
     mymacs = [intf.ethaddr for intf in my_interfaces]
