@@ -6,17 +6,6 @@ from switchyard.lib.userlib import *
 from threading import *
 import time
 
-def print_output(total_time, num_ret, num_tos, throughput, goodput):
-    print("Total TX time (s): " + str(total_time))
-    print("Number of reTX: " + str(num_ret))
-    print("Number of coarse TOs: " + str(num_tos))
-    print("Throughput (Bps): " + str(throughput))
-    print("Goodput (Bps): " + str(goodput))
-
-def mkACK (seqNum):
-
-    pass
-
 def switchy_main(net):
     my_interfaces = net.interfaces()
     mymacs = [intf.ethaddr for intf in my_interfaces]
@@ -26,6 +15,19 @@ def switchy_main(net):
         try:
             timestamp,dev,pkt = net.recv_packet()
             log_debug("Device is {}".format(dev))
+
+            # extract seq and data from recieved packet  
+            raw = pkt.get_header(RawPacketContents)
+            seq = int.from_bytes(raw.data[:4], 'big') 
+#            data = b64encode(raw.data[6:]).decode('utf-8') # can use to test if correct pkt 
+            
+            # construct ACK packet and send to middlebox 
+            ack_pkt = Ethernet() + IPv4() + UDP()
+            ack_pkt[1].protocol = IPProtocol.UDP
+
+            ack_pkt += seq.to_bytes(4, 'big') 
+            net.send_packet(dev, ack_pkt) 
+            
         except NoPackets:
             log_debug("No packets available in recv_packet")
             gotpkt = False
@@ -36,12 +38,6 @@ def switchy_main(net):
         if gotpkt:
             log_debug("I got a packet from {}".format(dev))
             log_debug("Pkt: {}".format(pkt))
-
-        seqNum = int.from_bytes(pkt.get_header(RawPacketContents).data[:4], 'big')
-        net.send_packet(my_interfaces.name, mkACK(seqNum))
-
-
-
 
 
     net.shutdown()

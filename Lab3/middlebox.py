@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 from switchyard.lib.address import *
 from switchyard.lib.packet import *
 from switchyard.lib.userlib import *
@@ -18,10 +16,11 @@ class MiddleBox(object):
         with open(file, 'r') as f:
             tokens = f.read().strip().split(" ")
             self.seed = tokens[1]
-            self.percent = tokens[2]
+            self.percent = tokens[3]
+            log_info(self.percent) 
 
     def drop(self):
-        random.seed(a=self.seed) #Extract random seed from params file
+        random.seed(a=self.seed) #Extract random seed from params file 
         return random.randrange(100) <= self.percent
 
     def switchy_main(self):
@@ -49,6 +48,7 @@ class MiddleBox(object):
                 if not self.drop():  # if both conditions fail, then drop the pkt as evil thing in network
                     pkt[Ethernet].src = self.net.interface_by_name("middlebox-eth1").ethaddr
                     pkt[Ethernet].dst = "20:00:00:00:00:01"
+                    log_info("SENDING PACKET TO BLASTEE") 
                     self.net.send_packet("middlebox-eth1", pkt)
                 log_debug("random pkt drop")
 
@@ -56,6 +56,7 @@ class MiddleBox(object):
                 log_debug("Received from blastee")
                 pkt[Ethernet].src = self.net.interface_by_name("middlebox-eth0").ethaddr
                 pkt[Ethernet].dst = "10:00:00:00:00:01"
+                log_info("SENDING PACKET TO BLASTER") 
                 self.net.send_packet("middlebox-eth0", pkt)
 
             else:
