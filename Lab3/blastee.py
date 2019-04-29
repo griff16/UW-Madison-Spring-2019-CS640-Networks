@@ -13,6 +13,10 @@ def print_output(total_time, num_ret, num_tos, throughput, goodput):
     print("Throughput (Bps): " + str(throughput))
     print("Goodput (Bps): " + str(goodput))
 
+def mkACK (seqNum):
+
+    pass
+
 def switchy_main(net):
     my_interfaces = net.interfaces()
     mymacs = [intf.ethaddr for intf in my_interfaces]
@@ -32,6 +36,12 @@ def switchy_main(net):
         if gotpkt:
             log_debug("I got a packet from {}".format(dev))
             log_debug("Pkt: {}".format(pkt))
+
+        seqNum = int.from_bytes(pkt.get_header(RawPacketContents).data[:4], 'big')
+        net.send_packet(my_interfaces.name, mkACK(seqNum))
+
+
+
 
 
     net.shutdown()
