@@ -55,6 +55,12 @@ class Blaster(object):
         else:
             return False
 
+    def checkACK(self, pkt):
+        seqNum = int.from_bytes(packet.get_header(RawPacketContents).data[:4], 'big')
+        if seqNum == self.lhs:
+            self.lhs += 1
+            map.pop(pkt)
+
     def print_output(total_time, num_ret, num_tos, throughput, goodput):
         print("Total TX time (s): " + str(total_time))
         print("Number of reTX: " + str(num_ret))
@@ -73,7 +79,7 @@ class Blaster(object):
                 #Timeout value will be parameterized!
                 timestamp,dev,pkt = self.net.recv_packet(timeout=self.rtimeouts)
 
-            
+                self.checkACK(pkt)
 
             except NoPackets:
                 log_debug("No packets available in recv_packet")
