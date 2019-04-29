@@ -55,6 +55,8 @@ class Blaster(object):
         else:
             return False
 
+        # check case 2
+
     def checkACK(self, pkt):
         seqNum = int.from_bytes(packet.get_header(RawPacketContents).data[:4], 'big')
         if seqNum == self.lhs:
@@ -88,7 +90,7 @@ class Blaster(object):
                 log_debug("Got shutdown signal")
                 break
 
-            while not self.q.empty():
+            while not self.q.empty():  # retransmission
                 pass
 
             if self.check():
