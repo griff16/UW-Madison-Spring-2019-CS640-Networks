@@ -6,32 +6,32 @@ import random
 import time
 
 class MiddleBox(object):
-    def __init__(self, net, file):
+    def __init__(self, net, txt_file):
         self.net = net
         self.seed = None
         self.percent = None
-        self.parse(file)
+        self.parse(txt_file)
 
     def parse(self, file):
         with open(file, 'r') as f:
             tokens = f.read().strip().split(" ")
             self.seed = tokens[1]
             self.percent = tokens[3]
-            log_info(self.percent) 
 
     def drop(self):
         random.seed(a=self.seed) #Extract random seed from params file 
-        return random.randrange(100) <= self.percent
+        return random.randrange(100) <= int(self.percent)
 
     def switchy_main(self):
         my_intf = self.net.interfaces()
         mymacs = [intf.ethaddr for intf in my_intf]
         myips = [intf.ipaddr for intf in my_intf]
-
         while True:
             gotpkt = True
             try:
+                log_info("here") 
                 timestamp, dev, pkt = self.net.recv_packet()
+                log_info("here")
                 log_debug("Device is {}".format(dev))
             except NoPackets:
                 log_debug("No packets available in recv_packet")
@@ -42,6 +42,7 @@ class MiddleBox(object):
 
             if gotpkt:
                 log_debug("I got a packet {}".format(pkt))
+	   
 
             if dev == "middlebox-eth0":
                 log_debug("Received from blaster")
@@ -64,5 +65,5 @@ class MiddleBox(object):
 
 def main(net):
     mbox = MiddleBox(net, "middlebox_params.txt")
-    mbox.switchy_main(net)
+    mbox.switchy_main()
     net.shutdown()
