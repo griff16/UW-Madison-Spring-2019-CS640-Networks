@@ -3,11 +3,9 @@ from switchyard.lib.address import *
 from switchyard.lib.packet import *
 from switchyard.lib.userlib import *
 from threading import *
-import time
 import os
 import time
 from queue import Queue
-from switchyard.lib.userlib import *
 
 class Blaster(object):
     def __init__(self, net, blaster_file):
@@ -20,7 +18,8 @@ class Blaster(object):
         self.packet_window = []          
         self.parse(blaster_file) 
         self.intf = self.net.interface_by_name('blaster-eth0')
-        self.lhs, self.rhs = 1, 1
+        self.lhs = 1
+        self.rhs = 1
         self.retransmission_queue = Queue()
         self.num_coarse_timeouts = 0
         self.num_retrans_packets = 0
@@ -37,7 +36,7 @@ class Blaster(object):
             self.recv_timeout = float(tokens[9])/1000
         self.packet_window = [False] * (int(self.num_packets) + 1) 
             
-     def print_output(self, total_time, num_ret, num_tos, throughput, goodput):
+    def print_output(self, total_time, num_ret, num_tos, throughput, goodput):
         print("Total TX time (s): " + str(total_time))
         print("Number of reTX: " + str(num_ret))
         print("Number of coarse TOs: " + str(num_tos))
@@ -65,8 +64,7 @@ class Blaster(object):
     def update_window(self):
 
         if (self.rhs - self.lhs + 1) <= self.sender_window and self.rhs <= self.num_packets and not self.packet_window[self.rhs]:
-
-            log_info("SENT PKT " +  str(self.rhs))
+            log_info("SENT PKT " + str(self.rhs))
             self.send_packet(self.rhs)
             self.rhs += 1
 
@@ -93,29 +91,30 @@ class Blaster(object):
             self.window_timestamp = time.time()
 
     def switchy_main(self):
+        my_interfaces = self.net.interfaces()
+        mymacs = [intf.ethaddr for intf in my_interfaces]
         self.window_timestamp = time.time()
+
         while True:
+            gotpkt = True
             try:
-                timestamp, dev, packet = self.net.recv_packet(
-                    timeout=self.recv_timeout
-                )
+                timestamp, dev, packet = self.net.recv_packet(timeout=self.recv_timeout)
                 self.deconstruct_packet(packet)
                 if (self.lhs == self.num_packets + 1):
                     self.last_packet_ackd_time = time.time()
-                    print(
-                        "End of transmission. "
-                        "Successfully received ACK for %d packets" %
-                        self.num_packets
-                    )
-                    raise Shutdown(
-                        "Finished reliable transmission of all packets"
-                    )
+                    print("End of transmission. Successfully received ACK for {} packets".format(self.num_packets))
+                    raise Shutdown("Finished reliable transmission of all packets")
 
             except NoPackets:
-                log_debug("No packets received!")
+                log_debug("No packets available in recv_packet")
+                gotpkt = False
             except Shutdown:
-                log_debug("Received signal for shutdown!")
-                return
+                log_debug("Got shutdown signal")
+                break
+
+            if gotpkt:
+                log_debug("I got a packet from {}".format(dev))
+                log_debug("Pkt: {}".format(packet))
 
             self.check_timeout()
             retransmitted_packet = False
@@ -134,7 +133,7 @@ class Blaster(object):
 def main(net):
     blaster = Blaster(net, 'blaster_params.txt')
     log_info(vars(Blaster(net, 'blaster_params.txt')))
-    blaster.switchy_main() 
+    blaster.switchy_main()
     total_time = blaster.last_packet_ackd_time - blaster.first_packet_send_time
     throughput = ((blaster.total_packets_sent * blaster.length_variable_payload) / total_time) 
     goodput = ((blaster.num_packets * blaster.length_variable_payload) / total_time) 

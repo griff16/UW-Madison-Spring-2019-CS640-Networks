@@ -2,7 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="9380f48e-75a6-492f-b2eb-8c83a61be0dc" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/blaster.py" beforeDir="false" afterPath="$PROJECT_DIR$/blaster.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -28,10 +27,10 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/blaster.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="459">
-              <caret line="32" column="66" selection-start-line="32" selection-start-column="66" selection-end-line="32" selection-end-column="66" />
+            <state relative-caret-position="1122">
+              <caret line="66" column="35" lean-forward="true" selection-start-line="66" selection-start-column="35" selection-end-line="66" selection-end-column="35" />
               <folding>
-                <element signature="e#0#9#0" expanded="true" />
+                <element signature="e#23#59#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -60,11 +59,12 @@
       <find>packet</find>
       <find>recv_time</find>
       <find>recv_timeout</find>
-      <find>seq_num</find>
       <find>coarse_timeout</find>
       <find>num_coarse_timeouts</find>
       <find>num_retrans_packets</find>
       <find>num_packets</find>
+      <find>seq_num</find>
+      <find>seq</find>
     </findStrings>
     <replaceStrings>
       <replace>retranQ</replace>
@@ -196,10 +196,10 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/blaster.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="459">
-          <caret line="32" column="66" selection-start-line="32" selection-start-column="66" selection-end-line="32" selection-end-column="66" />
+        <state relative-caret-position="1122">
+          <caret line="66" column="35" lean-forward="true" selection-start-line="66" selection-start-column="35" selection-end-line="66" selection-end-column="35" />
           <folding>
-            <element signature="e#0#9#0" expanded="true" />
+            <element signature="e#23#59#0" expanded="true" />
           </folding>
         </state>
       </provider>
