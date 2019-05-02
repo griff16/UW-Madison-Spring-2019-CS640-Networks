@@ -135,7 +135,7 @@ class Blaster(object):
 
 def main(net):
     blaster = Blaster(net, 'blaster_params.txt')
-    blaster.switchy__main() 
+    blaster.switchy_main()
 
     total_time = blaster.last_packet_ackd_time - blaster.first_packet_send_time
     throughput = ((blaster.total_packets_sent * blaster.length_variable_payload) / total_time) 
