@@ -106,7 +106,7 @@ class Blaster(object):
                 self.deconstruct_packet(pkt)
                 if (self.lhs == self.num_packets + 1):
                     self.last_packet_ackd_time = time.time()
-                    print("End of transmission. Successfully received ACK for {} packets".formatself.num_packets)
+                    print("End of transmission. Successfully received ACK for {} packets".format(self.num_packets))
                     raise Shutdown("Transmission is Over")
 
             except NoPackets:
