@@ -9,8 +9,9 @@ class Blaster(object):
         self.parse_params(params_file)
         self.intf = self.net.interface_by_name('blaster-eth0')
         self.middlbox_eth = EthAddr('40:00:00:00:00:01')
-        self.lhs, self.rhs = 1, 1
-        self.retransmission_queue = Queue()
+        self.lhs = 1
+        self.rhs = 1
+        self.resendQ = Queue()
         self.num_coarse_timeouts = 0
         self.num_retrans_packets = 0
         self.total_packets_sent = 0
@@ -91,7 +92,7 @@ class Blaster(object):
             self.num_coarse_timeouts += 1
             for i, packet_sent in enumerate(self.packet_window[self.lhs:self.rhs]):
                 if not packet_sent:
-                    self.retransmission_queue.put(self.lhs + i)
+                    self.resendQ.put(self.lhs + i)
 
             self.window_timestamp = time.time()
 
@@ -105,14 +106,14 @@ class Blaster(object):
                 self.deconstruct_packet(pkt)
                 if (self.lhs == self.num_packets + 1):
                     self.last_packet_ackd_time = time.time()
-                    print("End of transmission. Successfully received ACK for %d packets" % self.num_packets)
+                    print("End of transmission. Successfully received ACK for {} packets".formatself.num_packets)
                     raise Shutdown("Transmission is Over")
 
             except NoPackets:
                 log_debug("No packets available in recv_packet")
                 gotpkt = False
             except Shutdown:
-                log_debug("Received signal for shutdown!")
+                log_debug("Got shutdown signal")
                 break
             if gotpkt:
                 log_debug("I got a packet from {}".format(dev))
@@ -120,8 +121,8 @@ class Blaster(object):
 
             self.check_timeout()
             retransmitted_packet = False
-            while not self.retransmission_queue.empty():
-                seqNum = self.retransmission_queue.get()
+            while not self.resendQ.empty():
+                seqNum = self.resendQ.get()
                 if not self.packet_window[seqNum]:
                     self.num_retrans_packets += 1
                     log_info("Resend seqNum {} pkt".format(seqNum))
