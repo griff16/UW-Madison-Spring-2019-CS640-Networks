@@ -50,40 +50,39 @@ class Blaster(object):
         print("Throughput (Bps): " + str(throughput))
         print("Goodput (Bps): " + str(goodput))
 
-    def construct_packet(self, seq_num):
+    def construct_packet(self, seqNum):
         pkt = Ethernet() + IPv4(protocol=IPProtocol.UDP) + UDP()
         pkt[UDP].src = 4444
         pkt[UDP].dst = 5555
-        pkt += seq_num.to_bytes(4, 'big')
+        pkt += seqNum.to_bytes(4, 'big')
         pkt += self.length_variable_payload.to_bytes(2, 'big')
         pkt += os.urandom(self.length_variable_payload)
         return pkt
 
-    def send_packet(self, seq_num):
-        if seq_num == 1:
+    def send_packet(self, seqNum):
+        if seqNum == 1:
             self.first_packet_send_time = time.time()
 
         self.total_packets_sent += 1
-        pkt = self.construct_packet(seq_num)
+        pkt = self.construct_packet(seqNum)
         self.net.send_packet(self.intf.name, pkt)
 
     def update_window(self):
 
         if (self.rhs - self.lhs + 1) <= self.sender_window and self.rhs <= self.num_packets and not self.packet_window[self.rhs]:
-            log_info("SENT PKT " +  self.rhs)
+            log_info("SENT PKT " + str(self.rhs))
             self.send_packet(self.rhs)
             self.rhs += 1
 
     def deconstruct_packet(self, packet):
         contents = packet.get_header(RawPacketContents)
-        seq_num = int.from_bytes(contents.data[:4], 'big')
-        log_info("GOT ACK " + seq_num)
+        seqNum = int.from_bytes(contents.data[:4], 'big')
+        log_info("GOT ACK " + str(seqNum))
 
-        self.packet_window[seq_num] = True
-        if seq_num == self.lhs:
+        self.packet_window[seqNum] = True
+        if seqNum == self.lhs:
             while self.lhs < self.rhs and self.packet_window[self.lhs]:
                 self.lhs += 1
-
             self.window_timestamp = time.time()
 
     def check_timeout(self):
@@ -100,7 +99,7 @@ class Blaster(object):
         self.window_timestamp = time.time()
         while True:
             try:
-                timestamp, dev, pkt = self.net.recv_pkt(timeout=self.recv_timeout)
+                timestamp, dev, pkt = self.net.recv_packet(timeout=self.recv_timeout)
                 log_debug("Device is {}".format(dev))
 
                 self.deconstruct_packet(pkt)
@@ -122,11 +121,11 @@ class Blaster(object):
             self.check_timeout()
             retransmitted_packet = False
             while not self.retransmission_queue.empty():
-                seq_num = self.retransmission_queue.get()
-                if not self.packet_window[seq_num]:
+                seqNum = self.retransmission_queue.get()
+                if not self.packet_window[seqNum]:
                     self.num_retrans_packets += 1
-                    log_info("Resend seq_num {} pkt".format(seq_num))
-                    self.send_packet(seq_num)
+                    log_info("Resend seqNum {} pkt".format(seqNum))
+                    self.send_packet(seqNum)
                     retransmitted_packet = True
                     break
 
