@@ -12,7 +12,7 @@ class Blaster(object):
         self.lhs = 1
         self.rhs = 1
         self.resendQ = Queue()
-        self.num_coarse_timeouts = 0
+        self.coarseTimeout = 0
         self.num_retrans_packets = 0
         self.total_packets_sent = 0
 
@@ -89,7 +89,7 @@ class Blaster(object):
     def check_timeout(self):
         cur_time = time.time()
         if cur_time - self.window_timestamp > self.coarse_timeout:
-            self.num_coarse_timeouts += 1
+            self.coarseTimeout += 1
             for i, packet_sent in enumerate(self.packet_window[self.lhs:self.rhs]):
                 if not packet_sent:
                     self.resendQ.put(self.lhs + i)
@@ -140,5 +140,5 @@ def main(net):
     total_time = blaster.last_packet_ackd_time - blaster.first_packet_send_time
     throughput = ((blaster.total_packets_sent * blaster.length_variable_payload) / total_time) 
     goodput = ((blaster.num_packets * blaster.length_variable_payload) / total_time) 
-    blaster.print_output(total_time, blaster.num_retrans_packets, blaster.num_coarse_timeouts, throughput, goodput) 
+    blaster.print_output(total_time, blaster.num_retrans_packets, blaster.coarseTimeout, throughput, goodput)
     net.shutdown()
