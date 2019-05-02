@@ -13,7 +13,7 @@ class Blaster(object):
         self.rhs = 1
         self.resendQ = Queue()
         self.coarseTimeout = 0
-        self.num_retrans_packets = 0
+        self.resendNum = 0
         self.total_packets_sent = 0
 
     def parse_params(self, params_file):
@@ -124,7 +124,7 @@ class Blaster(object):
             while not self.resendQ.empty():
                 seqNum = self.resendQ.get()
                 if not self.packet_window[seqNum]:
-                    self.num_retrans_packets += 1
+                    self.resendNum += 1
                     log_info("Resend seqNum {} pkt".format(seqNum))
                     self.send_packet(seqNum)
                     retransmitted_packet = True
@@ -140,5 +140,5 @@ def main(net):
     total_time = blaster.last_packet_ackd_time - blaster.first_packet_send_time
     throughput = ((blaster.total_packets_sent * blaster.length_variable_payload) / total_time) 
     goodput = ((blaster.num_packets * blaster.length_variable_payload) / total_time) 
-    blaster.print_output(total_time, blaster.num_retrans_packets, blaster.coarseTimeout, throughput, goodput)
+    blaster.print_output(total_time, blaster.resendNum, blaster.coarseTimeout, throughput, goodput)
     net.shutdown()

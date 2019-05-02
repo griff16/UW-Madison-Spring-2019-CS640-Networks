@@ -27,8 +27,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/blaster.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="153">
-              <caret line="9" column="62" lean-forward="true" selection-start-line="9" selection-start-column="62" selection-end-line="9" selection-end-column="62" />
+            <state relative-caret-position="261">
+              <caret line="125" column="16" selection-start-line="125" selection-start-column="16" selection-end-line="125" selection-end-column="16" />
               <folding>
                 <element signature="e#0#9#0" expanded="true" />
               </folding>
@@ -61,12 +61,16 @@
       <find>recv_timeout</find>
       <find>seq_num</find>
       <find>coarse_timeout</find>
+      <find>num_coarse_timeouts</find>
+      <find>num_retrans_packets</find>
     </findStrings>
     <replaceStrings>
       <replace>retranQ</replace>
       <replace>pkt</replace>
       <replace>seqNum</replace>
       <replace>resendQ</replace>
+      <replace>coarseTimeout</replace>
+      <replace>resendNum</replace>
     </replaceStrings>
   </component>
   <component name="Git.Settings">
@@ -190,8 +194,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/blaster.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="153">
-          <caret line="9" column="62" lean-forward="true" selection-start-line="9" selection-start-column="62" selection-end-line="9" selection-end-column="62" />
+        <state relative-caret-position="261">
+          <caret line="125" column="16" selection-start-line="125" selection-start-column="16" selection-end-line="125" selection-end-column="16" />
           <folding>
             <element signature="e#0#9#0" expanded="true" />
           </folding>
