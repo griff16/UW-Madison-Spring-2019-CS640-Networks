@@ -4,9 +4,15 @@ from queue import Queue
 from switchyard.lib.userlib import *
 
 class Blaster(object):
-    def __init__(self, net, params_file):
+    def __init__(self, net, blaster_file):
         self.net = net
-        self.parse_params(params_file)
+        self.num_packets = 0
+        self.length_variable_payload = 0
+        self.sender_window = 0
+        self.coarse_timeout = 0.0
+        self.recv_timeout = 0.0
+        self.packet_window = []
+        self.parse(blaster_file)
         self.intf = self.net.interface_by_name('blaster-eth0')
         self.middlbox_eth = EthAddr('40:00:00:00:00:01')
         self.lhs = 1
@@ -16,33 +22,15 @@ class Blaster(object):
         self.resendNum = 0
         self.total_packets_sent = 0
 
-    def parse_params(self, params_file):
-        params_map = {
-            '-b': {'name': 'blastee_ip', 'type': IPv4Address},
-            '-n': {'name': 'num_packets', 'type': int},
-            '-l': {'name': 'length_variable_payload', 'type': int},
-            '-w': {'name': 'sender_window', 'type': int},
-            '-t': {'name': 'coarse_timeout', 'type': float},
-            '-r': {'name': 'recv_timeout', 'type': float}
-        }
-        with open(params_file, 'r') as fp:
-            params = fp.readline().strip().split()
-            while '' in params:
-                params.remove('')
-            i = 0
-            while i < len(params):
-                if params[i] in params_map:
-                    setattr(self, params_map[params[i]]['name'],
-                            params_map[params[i]]['type'](params[i + 1]))
-                    if params[i] in ['-t', '-r']:
-                        attr = getattr(self, params_map[params[i]]['name'])
-                        setattr(self, params_map[params[i]]['name'], attr / 1000)
-
-                    if params[i] == '-n':
-                        self.packet_window = [False] * (self.num_packets + 1)
-                    i += 2
-                    continue
-                i += 1
+    def parse(self, blaster_file):
+        with open(blaster_file, 'r') as f:
+            tokens = f.read().strip().split(" ")
+            self.num_packets = int(tokens[1])
+            self.length_variable_payload = int(tokens[3])
+            self.sender_window = int(tokens[5])
+            self.coarseTimeout = float(tokens[7])/1000
+            self.recv_timeout = float(tokens[9])/1000
+        self.packet_window = [False] * (int(self.num_packets) + 1)
 
     def print_output(self, total_time, num_ret, num_tos, throughput, goodput):
         print("Total TX time (s): " + str(total_time))
