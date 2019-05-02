@@ -13,17 +13,17 @@ class Blaster(object):
         self.num_packets = 0 
         self.length_variable_payload = 0 
         self.sender_window = 0 
-        self.coarse_timeout = 0.0 
+        self.cTimeout = 0.0
         self.recv_timeout = 0.0
         self.packet_window = []          
-        self.parse(blaster_file) 
-        self.intf = self.net.interface_by_name('blaster-eth0')
+        self.parse(blaster_file)
         self.lhs = 1
         self.rhs = 1
-        self.retransmission_queue = Queue()
-        self.num_coarse_timeouts = 0
-        self.num_retrans_packets = 0
-        self.total_packets_sent = 0
+        self.q = Queue()
+        self.num_cTimeout = 0
+        self.intf = self.net.interface_by_name('blaster-eth0')
+        self.numResendPkt = 0
+        self.totalPkts = 0
 
 
     def parse(self, blaster_file):
@@ -32,7 +32,7 @@ class Blaster(object):
             self.num_packets = int(tokens[1]) 
             self.length_variable_payload = int(tokens[3]) 
             self.sender_window = int(tokens[5]) 
-            self.coarse_timeout = float(tokens[7])/1000
+            self.cTimeout = float(tokens[7])/1000
             self.recv_timeout = float(tokens[9])/1000
         self.packet_window = [False] * (int(self.num_packets) + 1) 
             
@@ -57,7 +57,7 @@ class Blaster(object):
         if seq_num == 1:
             self.first_packet_send_time = time.time()
 
-        self.total_packets_sent += 1
+        self.totalPkts += 1
         pkt = self.construct_packet(seq_num)
         self.net.send_packet(self.intf.name, pkt)
 
@@ -82,17 +82,15 @@ class Blaster(object):
 
     def check_timeout(self):
         cur_time = time.time()
-        if cur_time - self.window_timestamp > self.coarse_timeout:
-            self.num_coarse_timeouts += 1
+        if cur_time - self.window_timestamp > self.cTimeout:
+            self.num_cTimeout += 1
             for i, packet_sent in enumerate(self.packet_window[self.lhs:self.rhs]):
                 if not packet_sent:
-                    self.retransmission_queue.put(self.lhs + i)
+                    self.q.put(self.lhs + i)
 
             self.window_timestamp = time.time()
 
     def switchy_main(self):
-        my_interfaces = self.net.interfaces()
-        mymacs = [intf.ethaddr for intf in my_interfaces]
         self.window_timestamp = time.time()
 
         while True:
@@ -102,8 +100,7 @@ class Blaster(object):
                 self.deconstruct_packet(packet)
                 if (self.lhs == self.num_packets + 1):
                     self.last_packet_ackd_time = time.time()
-                    print("End of transmission. Successfully received ACK for {} packets".format(self.num_packets))
-                    raise Shutdown("Finished reliable transmission of all packets")
+                    raise Shutdown("Finished")
 
             except NoPackets:
                 log_debug("No packets available in recv_packet")
@@ -118,11 +115,11 @@ class Blaster(object):
 
             self.check_timeout()
             retransmitted_packet = False
-            while not self.retransmission_queue.empty():
-                seq_num = self.retransmission_queue.get()
+            while not self.q.empty():
+                seq_num = self.q.get()
                 if not self.packet_window[seq_num]:
-                    self.num_retrans_packets += 1
-                    log_info("Resending packet with seq_num %s" % seq_num)
+                    self.numResendPkt += 1
+                    log_info("Resend packet {}".format(seq_num))
                     self.send_packet(seq_num)
                     retransmitted_packet = True
                     break
@@ -135,7 +132,7 @@ def main(net):
     log_info(vars(Blaster(net, 'blaster_params.txt')))
     blaster.switchy_main()
     total_time = blaster.last_packet_ackd_time - blaster.first_packet_send_time
-    throughput = ((blaster.total_packets_sent * blaster.length_variable_payload) / total_time) 
+    throughput = ((blaster.totalPkts * blaster.length_variable_payload) / total_time)
     goodput = ((blaster.num_packets * blaster.length_variable_payload) / total_time) 
-    blaster.print_output(total_time, blaster.num_retrans_packets, blaster.num_coarse_timeouts, throughput, goodput) 
+    blaster.print_output(total_time, blaster.numResendPkt, blaster.num_cTimeout, throughput, goodput)
     net.shutdown()

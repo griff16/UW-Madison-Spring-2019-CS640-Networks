@@ -27,8 +27,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/blaster.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1122">
-              <caret line="66" column="35" lean-forward="true" selection-start-line="66" selection-start-column="35" selection-end-line="66" selection-end-column="35" />
+            <state relative-caret-position="170">
+              <caret line="100" column="54" lean-forward="true" selection-start-line="100" selection-start-column="54" selection-end-line="100" selection-end-column="54" />
               <folding>
                 <element signature="e#23#59#0" expanded="true" />
               </folding>
@@ -65,6 +65,8 @@
       <find>num_packets</find>
       <find>seq_num</find>
       <find>seq</find>
+      <find>num_cTImeout</find>
+      <find>total_packets_sent</find>
     </findStrings>
     <replaceStrings>
       <replace>retranQ</replace>
@@ -73,6 +75,10 @@
       <replace>resendQ</replace>
       <replace>coarseTimeout</replace>
       <replace>resendNum</replace>
+      <replace>cTimeout</replace>
+      <replace>numResendPkt</replace>
+      <replace>q</replace>
+      <replace>totalPkts</replace>
     </replaceStrings>
   </component>
   <component name="Git.Settings">
@@ -196,8 +202,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/blaster.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1122">
-          <caret line="66" column="35" lean-forward="true" selection-start-line="66" selection-start-column="35" selection-end-line="66" selection-end-column="35" />
+        <state relative-caret-position="170">
+          <caret line="100" column="54" lean-forward="true" selection-start-line="100" selection-start-column="54" selection-end-line="100" selection-end-column="54" />
           <folding>
             <element signature="e#23#59#0" expanded="true" />
           </folding>
